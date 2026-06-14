@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoonMao 投票系统 API 文档</title>
+    <style>
+        :root {
+            --bg-main: #ffffff;
+            --bg-sidebar: #f8fbff;
+            --border-color: #d0e8ff;
+            --primary-blue: #4a90e2;
+            --light-blue: #eef5fc;
+            --text-main: #333333;
+            --text-sub: #666666;
+            --code-bg: #f8f9fa;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            background: var(--bg-main);
+            line-height: 1.6;
+        }
+
+        /* 左侧导航栏 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100vh;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 20px 0;
+            z-index: 10;
+        }
+
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-blue);
+            padding: 0 20px 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 10px;
+        }
+
+        /* 章节标题 (可折叠) */
+        .nav-chapter {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .nav-chapter:hover { background: var(--light-blue); }
+
+        .nav-chapter .arrow {
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+
+        .nav-chapter.collapsed .arrow { transform: rotate(-90deg); }
+
+        /* 导航子项 (隐藏/展开逻辑) */
+        .nav-items {
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .nav-items.hidden { max-height: 0; }
+
+        .nav-link {
+            display: block;
+            padding: 8px 20px 8px 35px;
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 13px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            background: var(--light-blue);
+            color: var(--primary-blue);
+        }
+
+        /* 高亮状态与蓝框 */
+        .nav-link.active {
+            background: var(--light-blue);
+            color: var(--primary-blue);
+            font-weight: 500;
+            border-left: 3px solid var(--primary-blue); /* 左侧蓝框 */
+        }
+
+        /* 右侧内容区 */
+        .main-content {
+            margin-left: 260px;
+            padding: 40px 50px 100px;
+            max-width: 1000px;
+        }
+
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h1 { font-size: 26px; margin-bottom: 10px; }
+        .subtitle { color: var(--text-sub); margin-bottom: 30px; font-size: 15px; }
+
+        /* API 卡片 (带蓝框) */
+        .api-card {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color); /* 蓝框 */
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(74, 144, 226, 0.05);
+        }
+
+        .api-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
+        .api-title { font-size: 20px; font-weight: 600; }
+        
+        .method {
+            font-size: 12px; font-weight: 700; padding: 4px 10px;
+            border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .method.get { background: #e3f2fd; color: #1976d2; }
+        .method.post { background: #e8f5e9; color: #388e3c; }
+        .method.patch { background: #f3e5f5; color: #7b1fa2; }
+        .method.delete { background: #ffebee; color: #d32f2f; }
+
+        .api-path {
+            font-family: monospace; background: var(--code-bg);
+            padding: 4px 10px; border-radius: 4px; font-size: 14px; color: #d63384;
+            display: inline-block; margin-bottom: 15px;
+        }
+
+        .section-label {
+            font-size: 15px; font-weight: 600; margin: 20px 0 10px;
+            color: var(--primary-blue); border-bottom: 1px dashed var(--border-color); padding-bottom: 5px;
+        }
+
+        /* 参数表格 */
+        .param-table {
+            width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 14px;
+        }
+        .param-table th {
+            background: var(--light-blue); text-align: left; padding: 10px;
+            font-weight: 600; color: var(--text-main); border: 1px solid var(--border-color);
+        }
+        .param-table td {
+            padding: 10px; border: 1px solid var(--border-color); color: var(--text-sub);
+        }
+        .param-table code { background: #f0f4f8; padding: 2px 5px; border-radius: 3px; color: #d63384; font-size: 13px;}
+
+        pre {
+            background: var(--code-bg); border: 1px solid var(--border-color);
+            border-radius: 6px; padding: 15px; overflow-x: auto; font-size: 13px;
+        }
+
+        .note {
+            background: #fffdf0; border-left: 3px solid #f1c40f;
+            padding: 10px 15px; margin-top: 15px; font-size: 13px; color: #856404; border-radius: 0 4px 4px 0;
+        }
+
+        /* 底部翻页 */
+        .pagination {
+            position: fixed; bottom: 0; left: 260px; right: 0;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);
+            border-top: 1px solid var(--border-color);
+            padding: 15px 50px; display: flex; justify-content: space-between;
+            z-index: 5;
+        }
+
+        .page-btn {
+            padding: 8px 20px; background: var(--light-blue); color: var(--primary-blue);
+            border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer;
+            font-size: 14px; transition: all 0.2s; text-decoration: none;
+        }
+        .page-btn:hover { background: var(--primary-blue); color: #fff; }
+        .page-btn.disabled { opacity: 0.5; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-title">MoonMao API</div>
+        <nav id="sidebarNav"></nav>
+    </aside>
+
+    <main class="main-content" id="mainContent">
+        <!-- 页面内容将由 JS 动态渲染或在此处写死，此处为保持简洁采用 JS 数据驱动渲染 -->
+    </main>
+
+    <div class="pagination">
+        <a href="#" class="page-btn" id="prevBtn">上一页</a>
+        <a href="#" class="page-btn" id="nextBtn">下一页</a>
+    </div>
+
+    <script>
+        // API 数据定义
+        const apiData = [
+            {
+                chapter: "基础",
+                items: [
+                    {
+                        id: "global", title: "全局约定", method: "", path: "",
+                        desc: "所有接口的基础规范与数据格式约定。",
+                        reqParams: [], resParams: [],
+                        note: "基础路径 (Base URL): <code>https://moonmao.pythonanywhere.com/api</code><br>数据格式: <code>application/json</code><br>鉴权: 管理员接口需在 Header 携带 <code>X-OTP: &lt;6位数字&gt;</code>"
+                    }
+                ]
+            },
+            {
+                chapter: "系统监控",
+                items: [
+                    {
+                        id: "metrics", title: "获取服务器监控", method: "GET", path: "/metrics",
+                        desc: "返回当前服务器的 CPU、内存使用率及 Flask 应用内存占用。",
+                        reqParams: [],
+                        resParams: [
+                            { name: "cpu_percent", type: "float", req: "-", desc: "CPU 使用率 (%)" },
+                            { name: "mem_percent", type: "float", req: "-", desc: "系统内存使用率 (%)" },
+                            { name: "app_mem_mb", type: "float", req: "-", desc: "当前应用内存占用 (MB)" }
+                        ]
+                    }
+                ]
+            },
+            {
+                chapter: "隐私同意",
+                items: [
+                    {
+                        id: "consent", title: "记录同意状态", method: "POST", path: "/consent",
+                        desc: "记录用户是否同意使用匿名化追踪工具，基于 IP 哈希。",
+                        reqParams: [
+                            { name: "action", type: "string", req: "是", desc: "操作类型，可选 'accept' 或 'reject'" }
+                        ],
+                        resParams: [
+                            { name: "status", type: "string", req: "-", desc: "状态码，如 'success'" },
+                            { name: "message", type: "string", req: "-", desc: "提示信息" }
+                        ]
+                    },
+                    {
+                        id: "consent-reset", title: "重置同意记录", method: "POST", path: "/consent/reset",
+                        desc: "清除当前 IP 的同意记录，使其下次访问重新弹出确认页。",
+                        reqParams: [],
+                        resParams: [
+                            { name: "status", type: "string", req: "-", desc: "状态码" },
+                            { name: "message", type: "string", req: "-", desc: "提示信息" }
+                        ]
+                    }
+                ]
+            },
+            {
+                chapter: "投票 (公开)",
+                items: [
+                    {
+                        id: "votes-list", title: "获取进行中列表", method: "GET", path: "/votes",
+                        desc: "获取所有状态为 active 的投票摘要。",
+                        reqParams: [],
+                        resParams: [
+                            { name: "votes", type: "array", req: "-", desc: "投票列表" },
+                            { name: "└─ id", type: "string", req: "-", desc: "投票 UUID" },
+                            { name: "└─ title", type: "string", req: "-", desc: "投票标题" },
+                            { name: "└─ options_count", type: "int", req: "-", desc: "选项数量" }
+                        ]
+                    },
+                    {
+                        id: "votes-closed", title: "获取已关闭列表", method: "GET", path: "/votes/closed",
+                        desc: "获取所有状态为 closed 的投票摘要。",
+                        reqParams: [],
+                        resParams: [{ name: "votes", type: "array", req: "-", desc: "结构同上，额外包含 status: 'closed'" }]
+                    },
+                    {
+                        id: "vote-detail", title: "获取投票详情", method: "GET", path: "/votes/<vid>",
+                        desc: "获取指定投票的详细信息及当前票数。",
+                        reqParams: [
+                            { name: "vid", type: "string", req: "是", desc: "路径参数，投票 UUID" }
+                        ],
+                        resParams: [
+                            { name: "id", type: "string", req: "-", desc: "投票 UUID" },
+                            { name: "title", type: "string", req: "-", desc: "标题" },
+                            { name: "options", type: "array", req: "-", desc: "选项列表 (含 id, text, count)" },
+                            { name: "total_votes", type: "int", req: "-", desc: "总票数" },
+                            { name: "expires_at", type: "string", req: "-", desc: "过期时间 (ISO 8601)" }
+                        ]
+                    },
+                    {
+                        id: "vote-submit", title: "提交投票", method: "POST", path: "/votes/<vid>/vote",
+                        desc: "用户提交选票。包含 Cookie 与 IP 哈希双重防刷机制。",
+                        reqParams: [
+                            { name: "vid", type: "string", req: "是", desc: "路径参数，投票 UUID" },
+                            { name: "option_id", type: "string", req: "是", desc: "Body 参数，选择的选项 ID" }
+                        ],
+                        resParams: [
+                            { name: "status", type: "string", req: "-", desc: "'success' 或错误码" }
+                        ],
+                        note: "防刷机制：1. 检查 Cookie <code>voted_&lt;vid&gt;</code>；2. 检查请求 IP 的 MD5 哈希。"
+                    }
+                ]
+            },
+            {
+                chapter: "投票 (管理员)",
+                items: [
+                    {
+                        id: "admin-create", title: "创建新投票", method: "POST", path: "/votes",
+                        desc: "创建一个新的投票活动。",
+                        reqParams: [
+                            { name: "title", type: "string", req: "是", desc: "投票标题" },
+                            { name: "options", type: "array", req: "是", desc: "选项文本数组" },
+                            { name: "description", type: "string", req: "否", desc: "投票描述" },
+                            { name: "expires_at", type: "string", req: "否", desc: "过期时间" },
+                            { name: "allow_multiple", type: "bool", req: "否", desc: "是否允许多选" }
+                        ],
+                        resParams: [
+                            { name: "status", type: "string", req: "-", desc: "'created'" },
+                            { name: "vote_id", type: "string", req: "-", desc: "新投票的 UUID" }
+                        ]
+                    },
+                    {
+                        id: "admin-status", title: "切换投票状态", method: "PATCH", path: "/votes/<vid>/status",
+                        desc: "在 active 和 closed 状态之间切换。",
+                        reqParams: [{ name: "vid", type: "string", req: "是", desc: "路径参数" }],
+                        resParams: [
+                            { name: "status", type: "string", req: "-", desc: "'success'" },
+                            { name: "new_status", type: "string", req: "-", desc: "切换后的状态" }
+                        ]
+                    },
+                    {
+                        id: "admin-delete", title: "彻底删除投票", method: "DELETE", path: "/votes/<vid>",
+                        desc: "物理删除该投票及其所有数据，不可恢复。",
+                        reqParams: [{ name: "vid", type: "string", req: "是", desc: "路径参数" }],
+                        resParams: [{ name: "status", type: "string", req: "-", desc: "'deleted'" }]
+                    },
+                    {
+                        id: "admin-results", title: "获取详细结果", method: "GET", path: "/votes/<vid>/results",
+                        desc: "获取包含总投票人数等完整管理数据的报告。",
+                        reqParams: [{ name: "vid", type: "string", req: "是", desc: "路径参数" }],
+                        resParams: [{ name: "voters_count", type: "int", req: "-", desc: "实际投票人数 (去重后)" }]
+                    },
+                    {
+                        id: "admin-migrate", title: "迁移/重置防刷", method: "POST", path: "/votes/migrate",
+                        desc: "清空所有历史投票的 voters 哈希列表，保留票数。",
+                        reqParams: [],
+                        resParams: [
+                            { name: "status", type: "string", req: "-", desc: "'success'" },
+                            { name: "message", type: "string", req: "-", desc: "处理结果描述" }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // 扁平化所有页面用于翻页
+        const allPages = apiData.flatMap(chapter => chapter.items);
+        let currentPageIndex = 0;
+
+        // 渲染左侧导航
+        function renderSidebar() {
+            const nav = document.getElementById('sidebarNav');
+            nav.innerHTML = apiData.map((chapter, cIdx) => `
+                <div class="nav-chapter" onclick="toggleChapter(this)">
+                    <span>${chapter.chapter}</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="nav-items">
+                    ${chapter.items.map(item => `
+                        <a href="#" class="nav-link" data-id="${item.id}" onclick="navigateTo('${item.id}', event)">
+                            ${item.title}
+                        </a>
+                    `).join('')}
+                </div>
+            `).join('');
+        }
+
+        // 渲染主内容
+        function renderPages() {
+            const main = document.getElementById('mainContent');
+            main.innerHTML = apiData.flatMap(chapter => chapter.items.map(item => `
+                <div class="page" id="page-${item.id}">
+                    <h1>${item.title}</h1>
+                    <div class="api-card">
+                        <div class="api-header">
+                            ${item.method ? `<span class="method ${item.method.toLowerCase()}">${item.method}</span>` : ''}
+                            <span class="api-title">${item.title}</span>
+                        </div>
+                        ${item.path ? `<div class="api-path">${item.path}</div>` : ''}
+                        <p style="color:var(--text-sub); margin-bottom:20px;">${item.desc}</p>
+                        
+                        ${item.reqParams.length > 0 ? `
+                            <div class="section-label">请求参数</div>
+                            <table class="param-table">
+                                <thead><tr><th>参数名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+                                <tbody>
+                                    ${item.reqParams.map(p => `<tr><td><code>${p.name}</code></td><td>${p.type}</td><td>${p.req}</td><td>${p.desc}</td></tr>`).join('')}
+                                </tbody>
+                            </table>
+                        ` : ''}
+
+                        ${item.resParams.length > 0 ? `
+                            <div class="section-label">响应参数</div>
+                            <table class="param-table">
+                                <thead><tr><th>参数名</th><th>类型</th><th>说明</th></tr></thead>
+                                <tbody>
+                                    ${item.resParams.map(p => `<tr><td><code>${p.name}</code></td><td>${p.type}</td><td>${p.desc}</td></tr>`).join('')}
+                                </tbody>
+                            </table>
+                        ` : ''}
+
+                        ${item.note ? `<div class="note"><strong>注意事项：</strong> ${item.note}</div>` : ''}
+                    </div>
+                </div>
+            `).join('')).join('');
+        }
+
+        // 导航逻辑
+        function navigateTo(id, event) {
+            if(event) event.preventDefault();
+            const index = allPages.findIndex(p => p.id === id);
+            if (index !== -1) showPage(index);
+        }
+
+        function showPage(index) {
+            currentPageIndex = index;
+            const item = allPages[index];
+            
+            // 切换页面显示
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${item.id}`).classList.add('active');
+
+            // 更新导航高亮
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.toggle('active', link.dataset.id === item.id);
+            });
+
+            // 确保父章节展开
+            const activeLink = document.querySelector(`.nav-link[data-id="${item.id}"]`);
+            if (activeLink) {
+                const itemsContainer = activeLink.parentElement;
+                itemsContainer.classList.remove('hidden');
+                itemsContainer.previousElementSibling.classList.remove('collapsed');
+            }
+
+            updatePagination();
+            window.scrollTo(0, 0);
+        }
+
+        function updatePagination() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.className = `page-btn ${currentPageIndex === 0 ? 'disabled' : ''}`;
+            prevBtn.textContent = currentPageIndex > 0 ? `上一页: ${allPages[currentPageIndex-1].title}` : '上一页';
+            prevBtn.onclick = (e) => { e.preventDefault(); if(currentPageIndex > 0) showPage(currentPageIndex - 1); };
+
+            nextBtn.className = `page-btn ${currentPageIndex === allPages.length - 1 ? 'disabled' : ''}`;
+            nextBtn.textContent = currentPageIndex < allPages.length - 1 ? `下一页: ${allPages[currentPageIndex+1].title}` : '下一页';
+            nextBtn.onclick = (e) => { e.preventDefault(); if(currentPageIndex < allPages.length - 1) showPage(currentPageIndex + 1); };
+        }
+
+        function toggleChapter(el) {
+            el.classList.toggle('collapsed');
+            el.nextElementSibling.classList.toggle('hidden');
+        }
+
+        // 初始化
+        renderSidebar();
+        renderPages();
+        showPage(0);
+    </script>
+</body>
+</html>
