@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>匿名化工具使用说明</title>
+    <style>
+        :root {
+            --bg-main: #ffffff;
+            --bg-sidebar: #f8fbff;
+            --border-color: #d0e8ff;
+            --primary-blue: #4a90e2;
+            --light-blue: #eef5fc;
+            --text-main: #333333;
+            --text-sub: #666666;
+            --code-bg: #f8f9fa;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main); background: var(--bg-main); line-height: 1.6;
+        }
+        .sidebar {
+            position: fixed; top: 0; left: 0; width: 260px; height: 100vh;
+            background: var(--bg-sidebar); border-right: 1px solid var(--border-color);
+            overflow-y: auto; padding: 20px 0; z-index: 10;
+        }
+        .sidebar-title {
+            font-size: 18px; font-weight: 600; color: var(--primary-blue);
+            padding: 0 20px 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 10px;
+        }
+        .nav-chapter {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 20px; font-size: 14px; font-weight: 600; color: var(--text-main);
+            cursor: pointer; user-select: none; transition: background 0.2s;
+        }
+        .nav-chapter:hover { background: var(--light-blue); }
+        .nav-chapter .arrow { font-size: 12px; transition: transform 0.3s; }
+        .nav-chapter.collapsed .arrow { transform: rotate(-90deg); }
+        .nav-items { max-height: 500px; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .nav-items.hidden { max-height: 0; }
+        .nav-link {
+            display: block; padding: 8px 20px 8px 35px; color: var(--text-sub);
+            text-decoration: none; font-size: 13px; border-left: 3px solid transparent; transition: all 0.2s;
+        }
+        .nav-link:hover { background: var(--light-blue); color: var(--primary-blue); }
+        .nav-link.active {
+            background: var(--light-blue); color: var(--primary-blue);
+            font-weight: 500; border-left: 3px solid var(--primary-blue);
+        }
+        .main-content { margin-left: 260px; padding: 40px 50px 100px; max-width: 1000px; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        h1 { font-size: 26px; margin-bottom: 10px; }
+        .subtitle { color: var(--text-sub); margin-bottom: 30px; font-size: 15px; }
+        .info-card {
+            background: var(--bg-main); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 25px; margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(74, 144, 226, 0.05);
+        }
+        .api-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
+        .api-title { font-size: 20px; font-weight: 600; }
+        .method {
+            font-size: 12px; font-weight: 700; padding: 4px 10px;
+            border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .method.post { background: #e8f5e9; color: #388e3c; }
+        .method.js { background: #e0f2fe; color: #0284c7; }
+        .api-path {
+            font-family: monospace; background: var(--code-bg);
+            padding: 4px 10px; border-radius: 4px; font-size: 14px; color: #d63384;
+            display: inline-block; margin-bottom: 15px;
+        }
+        .section-label {
+            font-size: 15px; font-weight: 600; margin: 20px 0 10px;
+            color: var(--primary-blue); border-bottom: 1px dashed var(--border-color); padding-bottom: 5px;
+        }
+        .param-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 14px; }
+        .param-table th {
+            background: var(--light-blue); text-align: left; padding: 10px;
+            font-weight: 600; color: var(--text-main); border: 1px solid var(--border-color);
+        }
+        .param-table td {
+            padding: 10px; border: 1px solid var(--border-color); color: var(--text-sub);
+        }
+        .param-table code { background: #f0f4f8; padding: 2px 5px; border-radius: 3px; color: #d63384; font-size: 13px; }
+        pre {
+            background: var(--code-bg); border: 1px solid var(--border-color);
+            border-radius: 6px; padding: 15px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin-top: 10px;
+        }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+        .note {
+            background: #fffdf0; border-left: 3px solid #f1c40f;
+            padding: 12px 15px; margin-top: 15px; font-size: 13px; color: #856404; border-radius: 0 4px 4px 0;
+        }
+        .note.safe { background: #f0fdf4; border-left-color: #22c55e; color: #166534; }
+        .pagination {
+            position: fixed; bottom: 0; left: 260px; right: 0;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);
+            border-top: 1px solid var(--border-color);
+            padding: 15px 50px; display: flex; justify-content: space-between; z-index: 5;
+        }
+        .page-btn {
+            padding: 8px 20px; background: var(--light-blue); color: var(--primary-blue);
+            border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer;
+            font-size: 14px; transition: all 0.2s; text-decoration: none;
+        }
+        .page-btn:hover { background: var(--primary-blue); color: #fff; }
+        .page-btn.disabled { opacity: 0.5; pointer-events: none; }
+        @media (max-width: 768px) {
+            .sidebar { width: 200px; }
+            .main-content { margin-left: 200px; padding: 20px; }
+            .pagination { left: 200px; padding: 15px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-title">隐私与匿名化说明</div>
+        <nav id="sidebarNav"></nav>
+    </aside>
+    <main class="main-content" id="mainContent"></main>
+    <div class="pagination">
+        <a href="#" class="page-btn" id="prevBtn">上一页</a>
+        <a href="#" class="page-btn" id="nextBtn">下一页</a>
+    </div>
+
+    <script>
+        const docData = [
+            {
+                chapter: "工具简介",
+                items: [
+                    {
+                        id: "what-is-clarity", title: "什么是 Microsoft Clarity",
+                        desc: "Microsoft Clarity 是一款免费的用户行为分析工具。它帮助我们了解用户如何与本网站互动，从而优化页面布局和用户体验。",
+                        table: [
+                            { key: "收集的数据", value: "匿名化的点击热图、滚动深度、鼠标移动轨迹及页面停留时间。" },
+                            { key: "不收集的数据", value: "绝不收集密码、信用卡号、身份证号等任何个人身份信息 (PII)。" },
+                            { key: "数据处理", value: "所有会话记录在传输前均经过自动脱敏和哈希处理。" }
+                        ]
+                    },
+                    {
+                        id: "data-promise", title: "我们的数据承诺",
+                        desc: "我们深知隐私的重要性，并在此向您做出以下庄严承诺：",
+                        table: [
+                            { key: "绝不商用", value: "收集的数据仅用于本网站的内部体验优化，绝不出售或共享给第三方广告商。" },
+                            { key: "随时撤回", value: "您拥有完全的控制权。您可以随时通过下方接口撤回授权或重置状态。" },
+                            { key: "合规性", value: "我们的实践符合 GDPR 及主流隐私保护法规的要求。" }
+                        ],
+                        note: "💡 提示：即使您拒绝使用 Clarity，本网站的核心功能也不会受到任何影响。"
+                    }
+                ]
+            },
+            {
+                chapter: "授权管理 API",
+                items: [
+                    {
+                        id: "api-accept", title: "授权记录 (Accept)", method: "POST", path: "/consent",
+                        desc: "用户明确同意使用匿名化追踪工具。系统将基于当前请求的 IP 哈希值记录该同意状态，并加载 Clarity 脚本。",
+                        reqParams: [{ name: "action", type: "string", req: "是", desc: "固定值: <code>'accept'</code>" }],
+                        resParams: [
+                            { name: "status", type: "string", req: "-", desc: "操作状态，如 <code>'success'</code>" },
+                            { name: "message", type: "string", req: "-", desc: "提示信息，如 <code>'Consent recorded'</code>" }
+                        ]
+                    },
+                    {
+                        id: "api-reject", title: "拒绝授权 (Reject)", method: "POST", path: "/consent",
+                        desc: "用户明确拒绝使用追踪工具。系统将记录拒绝状态，确保 Clarity 脚本不会被注入到页面中。",
+                        reqParams: [{ name: "action", type: "string", req: "是", desc: "固定值: <code>'reject'</code>" }],
+                        resParams: [
+                            { name: "status", type: "string", req: "-", desc: "操作状态，如 <code>'success'</code>" },
+                            { name: "message", type: "string", req: "-", desc: "提示信息，如 <code>'Consent recorded'</code>" }
+                        ],
+                        note: "系统通过本地 Cookie 或 IP 哈希双重校验，确保拒绝状态在会话期间有效。"
+                    },
+                    {
+                        id: "api-reset", title: "重置/取消授权", method: "POST", path: "/consent/reset",
+                        desc: "清除当前请求 IP 的同意或拒绝记录。执行此操作后，用户下次访问本网站时将重新看到隐私确认弹窗。",
+                        reqParams: [],
+                        resParams: [
+                            { name: "status", type: "string", req: "-", desc: "操作状态，如 <code>'success'</code>" },
+                            { name: "message", type: "string", req: "-", desc: "提示信息，如 <code>'Record cleared'</code>" }
+                        ],
+                        note: "此接口常用于测试环境，或用户在更改隐私偏好后希望重新触发授权流程的场景。"
+                    }
+                ]
+            },
+            {
+                chapter: "二次隐私保护",
+                items: [
+                    {
+                        id: "clarity-masking", title: "Clarity 屏蔽机制原理",
+                        desc: "MoonMao Hub 已在 Clarity 后台预配置了高级 CSS 屏蔽规则。当页面元素匹配特定选择器时，Clarity 将在录制热图与回放时自动对其进行像素级模糊或完全隐藏，实现数据层面的二次隔离。",
+                        table: [
+                            { key: "触发选择器", value: "<code>.pass-part</code> 或 <code>[data-pass]</code>" },
+                            { key: "屏蔽效果", value: "录制画面中该区域将显示为灰色遮挡，不传输原始 DOM 结构与文本数据。" },
+                            { key: "适用场景", value: "自定义输入框、敏感信息区块、本地调试内容等。" }
+                        ]
+                    },
+                    {
+                        id: "tampermonkey-guide", title: "油猴脚本配置指南", method: "JS", path: "Tampermonkey / Violentmonkey",
+                        desc: "通过用户脚本动态为指定元素添加 <code>.pass-part</code> 类，无需修改网站源码即可触发屏蔽机制。",
+                        code: `// ==UserScript==
+// @name         MoonMao Clarity Shield
+// @match        *://moonmao.pythonanywhere.com/*
+// @grant        none
+// ==/UserScript==
+(function() {
+    'use strict';
+    // 自动为所有 input 和指定敏感区块添加屏蔽类
+    const targets = document.querySelectorAll('input, .sensitive-data');
+    targets.forEach(el => el.classList.add('pass-part'));
+})();`,
+                        note: "💡 提示：此脚本仅在您的本地浏览器运行，不向任何服务器发送额外数据。Clarity 官方明确支持 CSS 级屏蔽，该方案安全且完全合规。"
+                    }
+                ]
+            }
+        ];
+
+        const allPages = docData.flatMap(chapter => chapter.items);
+        let currentPageIndex = 0;
+
+        function renderSidebar() {
+            const nav = document.getElementById('sidebarNav');
+            nav.innerHTML = docData.map(chapter => `
+                <div class="nav-chapter" onclick="toggleChapter(this)">
+                    <span>${chapter.chapter}</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="nav-items">
+                    ${chapter.items.map(item => `
+                        <a href="#" class="nav-link" data-id="${item.id}" onclick="navigateTo('${item.id}', event)">
+                            ${item.title}
+                        </a>
+                    `).join('')}
+                </div>
+            `).join('');
+        }
+
+        function renderPages() {
+            const main = document.getElementById('mainContent');
+            main.innerHTML = docData.flatMap(chapter => chapter.items.map(item => `
+                <div class="page" id="page-${item.id}">
+                    <h1>${item.title}</h1>
+                    <div class="info-card">
+                        <div class="api-header">
+                            ${item.method ? `<span class="method ${item.method.toLowerCase()}">${item.method}</span>` : ''}
+                            <span class="api-title">${item.title}</span>
+                        </div>
+                        ${item.path ? `<div class="api-path">${item.path}</div>` : ''}
+                        <p style="color:var(--text-sub); margin-bottom:20px;">${item.desc}</p>
+                        
+                        ${item.table ? `
+                            <div class="section-label">详细说明</div>
+                            <table class="param-table">
+                                <tbody>
+                                    ${item.table.map(row => `<tr><td style="width:30%; font-weight:600; color:var(--text-main)">${row.key}</td><td>${row.value}</td></tr>`).join('')}
+                                </tbody>
+                            </table>
+                        ` : ''}
+
+                        ${item.reqParams && item.reqParams.length > 0 ? `
+                            <div class="section-label">请求参数</div>
+                            <table class="param-table">
+                                <thead><tr><th>参数名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+                                <tbody>
+                                    ${item.reqParams.map(p => `<tr><td><code>${p.name}</code></td><td>${p.type}</td><td>${p.req}</td><td>${p.desc}</td></tr>`).join('')}
+                                </tbody>
+                            </table>
+                        ` : ''}
+
+                        ${item.resParams && item.resParams.length > 0 ? `
+                            <div class="section-label">响应参数</div>
+                            <table class="param-table">
+                                <thead><tr><th>参数名</th><th>类型</th><th>说明</th></tr></thead>
+                                <tbody>
+                                    ${item.resParams.map(p => `<tr><td><code>${p.name}</code></td><td>${p.type}</td><td>${p.desc}</td></tr>`).join('')}
+                                </tbody>
+                            </table>
+                        ` : ''}
+
+                        ${item.code ? `
+                            <div class="section-label">脚本示例</div>
+                            <pre><code>${item.code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+                        ` : ''}
+
+                        ${item.note ? `<div class="note ${item.note.includes('💡') ? 'safe' : ''}">${item.note}</div>` : ''}
+                    </div>
+                </div>
+            `).join('')).join('');
+        }
+
+        function navigateTo(id, event) {
+            if(event) event.preventDefault();
+            const index = allPages.findIndex(p => p.id === id);
+            if (index !== -1) showPage(index);
+        }
+
+        function showPage(index) {
+            currentPageIndex = index;
+            const item = allPages[index];
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${item.id}`).classList.add('active');
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.toggle('active', link.dataset.id === item.id);
+            });
+            const activeLink = document.querySelector(`.nav-link[data-id="${item.id}"]`);
+            if (activeLink) {
+                const itemsContainer = activeLink.parentElement;
+                itemsContainer.classList.remove('hidden');
+                itemsContainer.previousElementSibling.classList.remove('collapsed');
+            }
+            updatePagination();
+            window.scrollTo(0, 0);
+        }
+
+        function updatePagination() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            prevBtn.className = `page-btn ${currentPageIndex === 0 ? 'disabled' : ''}`;
+            prevBtn.textContent = currentPageIndex > 0 ? `上一页: ${allPages[currentPageIndex-1].title}` : '上一页';
+            prevBtn.onclick = (e) => { e.preventDefault(); if(currentPageIndex > 0) showPage(currentPageIndex - 1); };
+            nextBtn.className = `page-btn ${currentPageIndex === allPages.length - 1 ? 'disabled' : ''}`;
+            nextBtn.textContent = currentPageIndex < allPages.length - 1 ? `下一页: ${allPages[currentPageIndex+1].title}` : '下一页';
+            nextBtn.onclick = (e) => { e.preventDefault(); if(currentPageIndex < allPages.length - 1) showPage(currentPageIndex + 1); };
+        }
+
+        function toggleChapter(el) {
+            el.classList.toggle('collapsed');
+            el.nextElementSibling.classList.toggle('hidden');
+        }
+
+        renderSidebar();
+        renderPages();
+        showPage(0);
+    </script>
+</body>
+</html>
