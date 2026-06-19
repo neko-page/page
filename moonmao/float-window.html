@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoonMao Widget 文档</title>
+    <style>
+        :root {
+            --bg-main: #ffffff; --bg-sidebar: #f8fbff; --border-color: #d0e8ff;
+            --primary-blue: #4a90e2; --light-blue: #eef5fc;
+            --text-main: #333333; --text-sub: #666666; --code-bg: #f8f9fa;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--text-main); background: var(--bg-main); line-height: 1.6; }
+        .sidebar { position: fixed; top: 0; left: 0; width: 260px; height: 100vh; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); overflow-y: auto; padding: 20px 0; z-index: 10; }
+        .sidebar-title { font-size: 18px; font-weight: 600; color: var(--primary-blue); padding: 0 20px 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; }
+        .nav-chapter { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; font-size: 14px; font-weight: 600; cursor: pointer; user-select: none; transition: background 0.2s; }
+        .nav-chapter:hover { background: var(--light-blue); }
+        .nav-chapter .arrow { font-size: 12px; transition: transform 0.3s; }
+        .nav-chapter.collapsed .arrow { transform: rotate(-90deg); }
+        .nav-items { max-height: 500px; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .nav-items.hidden { max-height: 0; }
+        .nav-link { display: block; padding: 8px 20px 8px 35px; color: var(--text-sub); text-decoration: none; font-size: 13px; border-left: 3px solid transparent; transition: all 0.2s; }
+        .nav-link:hover { background: var(--light-blue); color: var(--primary-blue); }
+        .nav-link.active { background: var(--light-blue); color: var(--primary-blue); font-weight: 500; border-left: 3px solid var(--primary-blue); }
+        .main-content { margin-left: 260px; padding: 40px 50px 100px; max-width: 1000px; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        h1 { font-size: 26px; margin-bottom: 10px; }
+        .info-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 25px; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(74, 144, 226, 0.05); }
+        .api-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
+        .api-title { font-size: 20px; font-weight: 600; }
+        .tag { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .tag.prop { background: #fff3e0; color: #e65100; }
+        .tag.method { background: #e8f5e9; color: #388e3c; }
+        .tag.event { background: #fce4ec; color: #c2185b; }
+        .api-path { font-family: monospace; background: var(--code-bg); padding: 4px 10px; border-radius: 4px; font-size: 14px; color: #d63384; display: inline-block; margin-bottom: 15px; }
+        .section-label { font-size: 15px; font-weight: 600; margin: 20px 0 10px; color: var(--primary-blue); border-bottom: 1px dashed var(--border-color); padding-bottom: 5px; }
+        .param-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 14px; }
+        .param-table th { background: var(--light-blue); text-align: left; padding: 10px; font-weight: 600; border: 1px solid var(--border-color); }
+        .param-table td { padding: 10px; border: 1px solid var(--border-color); color: var(--text-sub); }
+        .param-table code { background: #f0f4f8; padding: 2px 5px; border-radius: 3px; color: #d63384; font-size: 13px; }
+        .note { background: #fffdf0; border-left: 3px solid #f1c40f; padding: 12px 15px; margin-top: 15px; font-size: 13px; color: #856404; border-radius: 0 4px 4px 0; }
+        .note.safe { background: #f0fdf4; border-left-color: #22c55e; color: #166534; }
+        
+        /* 下载按钮样式 */
+        .download-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            margin-top: 25px; padding: 12px 28px;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+            color: #fff; text-decoration: none; border-radius: 8px;
+            font-size: 15px; font-weight: 600; transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+        }
+        .download-btn svg { width: 18px; height: 18px; }
+
+        .pagination { position: fixed; bottom: 0; left: 260px; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); border-top: 1px solid var(--border-color); padding: 15px 50px; display: flex; justify-content: space-between; z-index: 5; }
+        .page-btn { padding: 8px 20px; background: var(--light-blue); color: var(--primary-blue); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-decoration: none; }
+        .page-btn:hover { background: var(--primary-blue); color: #fff; }
+        .page-btn.disabled { opacity: 0.5; pointer-events: none; }
+        @media (max-width: 768px) { .sidebar { width: 200px; } .main-content { margin-left: 200px; padding: 20px; } .pagination { left: 200px; padding: 15px 20px; } }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-title">MoonMao Widget</div>
+        <nav id="sidebarNav"></nav>
+    </aside>
+    <main class="main-content" id="mainContent"></main>
+    <div class="pagination">
+        <a href="#" class="page-btn" id="prevBtn">上一页</a>
+        <a href="#" class="page-btn" id="nextBtn">下一页</a>
+    </div>
+
+    <script>
+        const docData = [
+            {
+                chapter: "控件概述",
+                items: [
+                    {
+                        id: "intro", title: "什么是 HTML悬浮窗",
+                        desc: "“HTML悬浮窗”是 MoonMao 推出的一款全局不可见控件。它允许开发者在 CoCoKit 项目中，通过唯一的“窗口编号”动态创建、管理和销毁多个独立的悬浮窗口。",
+                        table: [
+                            { key: "控件类型", value: "全局不可见控件 (InvisibleWidget)" },
+                            { key: "核心特性", value: "支持注入任意 HTML 代码、内置拖拽交互、多窗口并行管理。" },
+                            { key: "适用场景", value: "复杂弹窗交互、自定义 UI 面板、多窗口状态管理。" }
+                        ],
+                        download: {
+                            url: "https://db0l8fnn8oqtof.database.nocode.cn/storage/v1/object/public/wenjian/f0ad3a2b-0f35-4818-b485-789c75185522/1781888038031_81ffmhmcyzn.zip?download=true",
+                            text: "立即下载 V1.0.0 (.zip)"
+                        }
+                    }
+                ]
+            },
+            {
+                chapter: "属性配置 (Properties)",
+                items: [
+                    { id: "prop-title", title: "默认窗口名", tag: "prop", path: "defaultTitle", desc: "标题栏显示的文字。当创建新窗口且未动态指定时，将继承此默认值。", reqParams: [{ name: "valueType", type: "string", req: "-", desc: "文本类型" }, { name: "defaultValue", type: "string", req: "-", desc: "<code>悬浮窗</code>" }] },
+                    { id: "prop-html", title: "默认HTML内容", tag: "prop", path: "defaultHTML", desc: "窗口内容区渲染的初始 HTML 代码。支持图片、列表、表单等标准 HTML 标签。", reqParams: [{ name: "valueType", type: "string", req: "-", desc: "HTML 字符串" }, { name: "defaultValue", type: "string", req: "-", desc: "<code>&lt;p&gt;自定义内容&lt;/p&gt;</code>" }] },
+                    { id: "prop-size", title: "默认宽高", tag: "prop", path: "defaultWidth / defaultHeight", desc: "窗口的初始尺寸，单位为像素 (px)。", reqParams: [{ name: "defaultWidth", type: "number", req: "-", desc: "默认 <code>300</code>" }, { name: "defaultHeight", type: "number", req: "-", desc: "默认 <code>200</code>" }] },
+                    { id: "prop-style", title: "默认样式与交互", tag: "prop", path: "defaultBgColor / defaultShowClose", desc: "控制窗口的初始背景色及右上角关闭按钮的显示状态。", reqParams: [{ name: "defaultBgColor", type: "color", req: "-", desc: "默认 <code>#FFFFFF</code> (纯白)" }, { name: "defaultShowClose", type: "boolean", req: "-", desc: "默认 <code>true</code> (显示关闭键)" }] }
+                ]
+            },
+            {
+                chapter: "积木方法 (Methods)",
+                items: [
+                    { id: "m-create", title: "创建悬浮窗", tag: "method", path: "createWindow", desc: "在屏幕上生成一个悬浮窗。窗口编号必须全局唯一，否则将触发报错。", reqParams: [{ name: "windowId", type: "string", req: "是", desc: "窗口的唯一标识符 (如 'win_1')" }] },
+                    { id: "m-close", title: "关闭悬浮窗", tag: "method", path: "closeWindow", desc: "将指定窗口从 DOM 树中彻底移除并释放内存。", reqParams: [{ name: "windowId", type: "string", req: "是", desc: "需要销毁的窗口编号" }] },
+                    { id: "m-set-title", title: "设置窗口名", tag: "method", path: "setWindowTitle", desc: "动态更改标题栏的文字，无需重新创建窗口。", reqParams: [{ name: "windowId", type: "string", req: "是", desc: "目标窗口编号" }, { name: "title", type: "string", req: "是", desc: "新的标题文本" }] },
+                    { id: "m-set-html", title: "设置窗口HTML", tag: "method", path: "setWindowHTML", desc: "替换窗口内的 HTML 内容，适用于更新进度条或动态列表。", reqParams: [{ name: "windowId", type: "string", req: "是", desc: "目标窗口编号" }, { name: "html", type: "string", req: "是", desc: "新的 HTML 字符串" }] },
+                    { id: "m-set-size", title: "设置窗口尺寸", tag: "method", path: "setWindowWidth / Height", desc: "实时调整窗口的宽度或高度，以适应内容变化。", reqParams: [{ name: "windowId", type: "string", req: "是", desc: "目标窗口编号" }, { name: "width/height", type: "number", req: "是", desc: "新的像素值 (px)" }] },
+                    { id: "m-set-bg", title: "设置窗口背景色", tag: "method", path: "setWindowBgColor", desc: "动态切换窗口的背景颜色，支持 Hex 和 RGBA 格式。", reqParams: [{ name: "windowId", type: "string", req: "是", desc: "目标窗口编号" }, { name: "bgColor", type: "color", req: "是", desc: "新的颜色值" }] },
+                    { id: "m-set-close", title: "设置关闭键显示", tag: "method", path: "setWindowShowClose", desc: "动态隐藏或显示右上角的“×”按钮，防止用户在关键操作时误触关闭。", reqParams: [{ name: "windowId", type: "string", req: "是", desc: "目标窗口编号" }, { name: "showClose", type: "boolean", req: "是", desc: "true (显示) 或 false (隐藏)" }] }
+                ]
+            },
+            {
+                chapter: "事件监听 (Events)",
+                items: [
+                    { id: "e-close", title: "当关闭键被点击", tag: "event", path: "onCloseClick", desc: "用户点击“×”时触发。注意：窗口不会自动销毁，需开发者手动调用“关闭悬浮窗”积木。", reqParams: [{ name: "windowId", type: "string", req: "-", desc: "被点击关闭键的窗口编号" }], note: "核心设计理念：拦截关闭逻辑。可在此事件下接入“弹出确认框”或“表单数据校验”积木。" },
+                    { id: "e-error", title: "发生报错", tag: "event", path: "onError", desc: "当执行非法操作（如窗口编号为空、编号已存在、操作不存在的窗口）时触发。", reqParams: [{ name: "errorMsg", type: "string", req: "-", desc: "详细的错误原因描述" }], note: "建议：开发阶段将此事件连接到“浮动提示”或“打印日志”积木，以便快速定位逻辑漏洞。" }
+                ]
+            },
+            {
+                chapter: "进阶指南",
+                items: [
+                    { id: "adv-isolate", title: "多窗口隔离机制", desc: "控件内部采用 Map 数据结构管理所有窗口实例。", table: [{ key: "并行管理", value: "支持同时创建数十个独立窗口（如主菜单、设置面板、消息通知）。" }, { key: "互不干扰", value: "每个窗口拥有独立的 DOM 节点与状态，分别响应拖拽和属性修改。" }, { key: "唯一标识", value: "必须保证传入的 windowId 不重复，否则将触发 onError 事件。" }] },
+                    { id: "adv-interact", title: "嵌入交互元素", desc: "由于支持直接渲染 HTML，可在窗口内嵌入带有 onclick 属性的按钮或链接。", table: [{ key: "DOM 联动", value: "结合 CoCoKit 的全局变量或自定义事件，实现窗口内部元素与外部积木逻辑的深度联动。" }, { key: "样式继承", value: "窗口内容区默认开启 overflow-y: auto 与 word-break: break-all，确保长文本或大图片不会撑破窗口。" }] }
+                ]
+            }
+        ];
+
+        const allPages = docData.flatMap(c => c.items);
+        let currentPageIndex = 0;
+
+        function renderSidebar() {
+            document.getElementById('sidebarNav').innerHTML = docData.map(c => `
+                <div class="nav-chapter" onclick="toggleChapter(this)"><span>${c.chapter}</span><span class="arrow">▼</span></div>
+                <div class="nav-items">${c.items.map(i => `<a href="#" class="nav-link" data-id="${i.id}" onclick="navigateTo('${i.id}', event)">${i.title}</a>`).join('')}</div>
+            `).join('');
+        }
+
+        function renderPages() {
+            document.getElementById('mainContent').innerHTML = docData.flatMap(c => c.items.map(i => `
+                <div class="page" id="page-${i.id}">
+                    <h1>${i.title}</h1>
+                    <div class="info-card">
+                        <div class="api-header">
+                            ${i.tag ? `<span class="tag ${i.tag}">${i.tag}</span>` : ''}
+                            <span class="api-title">${i.title}</span>
+                        </div>
+                        ${i.path ? `<div class="api-path">${i.path}</div>` : ''}
+                        <p style="color:var(--text-sub); margin-bottom:20px;">${i.desc}</p>
+                        ${i.table ? `<div class="section-label">详细说明</div><table class="param-table"><tbody>${i.table.map(r => `<tr><td style="width:30%; font-weight:600;">${r.key}</td><td>${r.value}</td></tr>`).join('')}</tbody></table>` : ''}
+                        ${i.reqParams ? `<div class="section-label">${i.tag === 'event' ? '事件参数' : '参数说明'}</div><table class="param-table"><thead><tr><th>参数名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead><tbody>${i.reqParams.map(p => `<tr><td><code>${p.name}</code></td><td>${p.type}</td><td>${p.req}</td><td>${p.desc}</td></tr>`).join('')}</tbody></table>` : ''}
+                        ${i.download ? `
+                            <a href="${i.download.url}" class="download-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                ${i.download.text}
+                            </a>
+                        ` : ''}
+                        ${i.note ? `<div class="note ${i.note.includes('核心') ? 'safe' : ''}">${i.note}</div>` : ''}
+                    </div>
+                </div>
+            `).join('')).join('');
+        }
+
+        function navigateTo(id, e) { if(e) e.preventDefault(); showPage(allPages.findIndex(p => p.id === id)); }
+        function showPage(idx) {
+            currentPageIndex = idx; const item = allPages[idx];
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${item.id}`).classList.add('active');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.id === item.id));
+            const activeLink = document.querySelector(`.nav-link[data-id="${item.id}"]`);
+            if (activeLink) { activeLink.parentElement.classList.remove('hidden'); activeLink.parentElement.previousElementSibling.classList.remove('collapsed'); }
+            updatePagination(); window.scrollTo(0, 0);
+        }
+        function updatePagination() {
+            const p = document.getElementById('prevBtn'), n = document.getElementById('nextBtn');
+            p.className = `page-btn ${currentPageIndex === 0 ? 'disabled' : ''}`;
+            p.textContent = currentPageIndex > 0 ? `上一页: ${allPages[currentPageIndex-1].title}` : '上一页';
+            p.onclick = (e) => { e.preventDefault(); if(currentPageIndex > 0) showPage(currentPageIndex - 1); };
+            n.className = `page-btn ${currentPageIndex === allPages.length - 1 ? 'disabled' : ''}`;
+            n.textContent = currentPageIndex < allPages.length - 1 ? `下一页: ${allPages[currentPageIndex+1].title}` : '下一页';
+            n.onclick = (e) => { e.preventDefault(); if(currentPageIndex < allPages.length - 1) showPage(currentPageIndex + 1); };
+        }
+        function toggleChapter(el) { el.classList.toggle('collapsed'); el.nextElementSibling.classList.toggle('hidden'); }
+
+        renderSidebar(); renderPages(); showPage(0);
+    </script>
+</body>
+</html>
