@@ -35,6 +35,7 @@
         .tag.prop { background: #fff3e0; color: #e65100; }
         .tag.method { background: #e8f5e9; color: #388e3c; }
         .tag.event { background: #fce4ec; color: #c2185b; }
+        .tag.download { background: #e0f2fe; color: #0284c7; }
         .api-path { font-family: monospace; background: var(--code-bg); padding: 4px 10px; border-radius: 4px; font-size: 14px; color: #d63384; display: inline-block; margin-bottom: 15px; }
         .section-label { font-size: 15px; font-weight: 600; margin: 20px 0 10px; color: var(--primary-blue); border-bottom: 1px dashed var(--border-color); padding-bottom: 5px; }
         .param-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 14px; }
@@ -53,10 +54,7 @@
             font-size: 15px; font-weight: 600; transition: all 0.3s;
             box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
         }
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
-        }
+        .download-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4); }
         .download-btn svg { width: 18px; height: 18px; }
 
         .pagination { position: fixed; bottom: 0; left: 260px; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); border-top: 1px solid var(--border-color); padding: 15px 50px; display: flex; justify-content: space-between; z-index: 5; }
@@ -89,15 +87,7 @@
                             { key: "控件类型", value: "全局不可见控件 (InvisibleWidget)" },
                             { key: "核心特性", value: "支持注入任意 HTML 代码、内置拖拽交互、多窗口并行管理。" },
                             { key: "适用场景", value: "复杂弹窗交互、自定义 UI 面板、多窗口状态管理。" }
-                        ],
-                        download: {
-                            url: "https://db0l8fnn8oqtof.database.nocode.cn/storage/v1/object/public/wenjian/f0ad3a2b-0f35-4818-b485-789c75185522/1781924618781_56bi9eq7s49.zip?download=true",
-                            text: "立即下载 V1.0.0 (.zip)"
-                        },
-                         download: {
-                            url: "https://db0l8fnn8oqtof.database.nocode.cn/storage/v1/object/public/wenjian/f0ad3a2b-0f35-4818-b485-789c75185522/1781932302633_9fxy66jjmq.zip?download=true",
-                            text: "立即下载 V2.0.0 (.zip)"
-                        }
+                        ]
                     }
                 ]
             },
@@ -134,6 +124,27 @@
                 items: [
                     { id: "adv-isolate", title: "多窗口隔离机制", desc: "控件内部采用 Map 数据结构管理所有窗口实例。", table: [{ key: "并行管理", value: "支持同时创建数十个独立窗口（如主菜单、设置面板、消息通知）。" }, { key: "互不干扰", value: "每个窗口拥有独立的 DOM 节点与状态，分别响应拖拽和属性修改。" }, { key: "唯一标识", value: "必须保证传入的 windowId 不重复，否则将触发 onError 事件。" }] },
                     { id: "adv-interact", title: "嵌入交互元素", desc: "由于支持直接渲染 HTML，可在窗口内嵌入带有 onclick 属性的按钮或链接。", table: [{ key: "DOM 联动", value: "结合 CoCoKit 的全局变量或自定义事件，实现窗口内部元素与外部积木逻辑的深度联动。" }, { key: "样式继承", value: "窗口内容区默认开启 overflow-y: auto 与 word-break: break-all，确保长文本或大图片不会撑破窗口。" }] }
+                ]
+            },
+            {
+                chapter: "下载专区",
+                items: [
+                    {
+                        id: "dl-v1", title: "V1.0.0 基础版", tag: "download",
+                        desc: "首个稳定版本。支持多窗口并行管理、基础属性配置、流畅的拖拽移动以及核心的关闭拦截逻辑。满足绝大多数自定义弹窗与 UI 面板的基础需求。",
+                        download: {
+                            url: "https://db0l8fnn8oqtof.database.nocode.cn/storage/v1/object/public/wenjian/f0ad3a2b-0f35-4818-b485-789c75185522/1781888038031_81ffmhmcyzn.zip?download=true",
+                            text: "下载 V1.0.0 (.zip)"
+                        }
+                    },
+                    {
+                        id: "dl-v2", title: "V2.0.0 增强版", tag: "download",
+                        desc: "在 V1 的基础上，新增了元素点击监听功能。允许开发者在注入的 HTML 中直接绑定交互事件，实现窗口内部元素与外部积木逻辑的深度联动，大幅拓展了控件的交互能力。",
+                        download: {
+                            url: "https://db0l8fnn8oqtof.database.nocode.cn/storage/v1/object/public/wenjian/f0ad3a2b-0f35-4818-b485-789c75185522/1781932302633_9fxy66jjmq.zip?download=true",
+                            text: "下载 V2.0.0 (.zip)"
+                        }
+                    }
                 ]
             }
         ];
