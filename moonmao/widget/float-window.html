@@ -42,10 +42,11 @@
         .param-table th { background: var(--light-blue); text-align: left; padding: 10px; font-weight: 600; border: 1px solid var(--border-color); }
         .param-table td { padding: 10px; border: 1px solid var(--border-color); color: var(--text-sub); }
         .param-table code { background: #f0f4f8; padding: 2px 5px; border-radius: 3px; color: #d63384; font-size: 13px; }
+        pre { background: var(--code-bg); border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin-top: 10px; white-space: pre-wrap; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
         .note { background: #fffdf0; border-left: 3px solid #f1c40f; padding: 12px 15px; margin-top: 15px; font-size: 13px; color: #856404; border-radius: 0 4px 4px 0; }
         .note.safe { background: #f0fdf4; border-left-color: #22c55e; color: #166534; }
         
-        /* 下载按钮样式 */
         .download-btn {
             display: inline-flex; align-items: center; gap: 8px;
             margin-top: 25px; padding: 12px 28px;
@@ -85,8 +86,8 @@
                         desc: "“HTML悬浮窗”是 MoonMao 推出的一款全局不可见控件。它允许开发者在 CoCoKit 项目中，通过唯一的“窗口编号”动态创建、管理和销毁多个独立的悬浮窗口。",
                         table: [
                             { key: "控件类型", value: "全局不可见控件 (InvisibleWidget)" },
-                            { key: "核心特性", value: "支持注入任意 HTML 代码、内置拖拽交互、多窗口并行管理。" },
-                            { key: "适用场景", value: "复杂弹窗交互、自定义 UI 面板、多窗口状态管理。" }
+                            { key: "核心特性", value: "支持注入任意 HTML 代码、内置拖拽交互、多窗口并行管理、V2.0 元素事件委托。" },
+                            { key: "适用场景", value: "复杂弹窗交互、自定义 UI 面板、多窗口状态管理、数据驱动表单。" }
                         ]
                     }
                 ]
@@ -116,14 +117,43 @@
                 chapter: "事件监听 (Events)",
                 items: [
                     { id: "e-close", title: "当关闭键被点击", tag: "event", path: "onCloseClick", desc: "用户点击“×”时触发。注意：窗口不会自动销毁，需开发者手动调用“关闭悬浮窗”积木。", reqParams: [{ name: "windowId", type: "string", req: "-", desc: "被点击关闭键的窗口编号" }], note: "核心设计理念：拦截关闭逻辑。可在此事件下接入“弹出确认框”或“表单数据校验”积木。" },
-                    { id: "e-error", title: "发生报错", tag: "event", path: "onError", desc: "当执行非法操作（如窗口编号为空、编号已存在、操作不存在的窗口）时触发。", reqParams: [{ name: "errorMsg", type: "string", req: "-", desc: "详细的错误原因描述" }], note: "建议：开发阶段将此事件连接到“浮动提示”或“打印日志”积木，以便快速定位逻辑漏洞。" }
+                    { id: "e-error", title: "发生报错", tag: "event", path: "onError", desc: "当执行非法操作（如窗口编号为空、编号已存在、操作不存在的窗口）时触发。", reqParams: [{ name: "errorMsg", type: "string", req: "-", desc: "详细的错误原因描述" }], note: "建议：开发阶段将此事件连接到“浮动提示”或“打印日志”积木，以便快速定位逻辑漏洞。" },
+                    { 
+                        id: "e-element-click", title: "当窗口内元素被点击", tag: "event", path: "onElementClick", 
+                        desc: "V2.0.0 新增。当用户点击窗口内带有特定属性的元素时触发。采用兼容性事件委托机制，稳定捕获深层嵌套元素的点击。", 
+                        reqParams: [
+                            { name: "windowId", type: "string", req: "-", desc: "触发点击的窗口编号" },
+                            { name: "action", type: "string", req: "-", desc: "元素上 <code>data-action</code> 属性的值" },
+                            { name: "value", type: "string", req: "-", desc: "元素上 <code>data-value</code> 属性的值 (可选)" }
+                        ], 
+                        note: "💡 核心优势：无需在 HTML 中编写 <code>onclick</code> 脚本，彻底解耦 UI 与逻辑，完美适配沙箱环境。" 
+                    }
                 ]
             },
             {
                 chapter: "进阶指南",
                 items: [
                     { id: "adv-isolate", title: "多窗口隔离机制", desc: "控件内部采用 Map 数据结构管理所有窗口实例。", table: [{ key: "并行管理", value: "支持同时创建数十个独立窗口（如主菜单、设置面板、消息通知）。" }, { key: "互不干扰", value: "每个窗口拥有独立的 DOM 节点与状态，分别响应拖拽和属性修改。" }, { key: "唯一标识", value: "必须保证传入的 windowId 不重复，否则将触发 onError 事件。" }] },
-                    { id: "adv-interact", title: "嵌入交互元素", desc: "由于支持直接渲染 HTML，可在窗口内嵌入带有 onclick 属性的按钮或链接。", table: [{ key: "DOM 联动", value: "结合 CoCoKit 的全局变量或自定义事件，实现窗口内部元素与外部积木逻辑的深度联动。" }, { key: "样式继承", value: "窗口内容区默认开启 overflow-y: auto 与 word-break: break-all，确保长文本或大图片不会撑破窗口。" }] }
+                    { id: "adv-interact", title: "嵌入交互元素", desc: "由于支持直接渲染 HTML，可在窗口内嵌入带有 onclick 属性的按钮或链接。", table: [{ key: "DOM 联动", value: "结合 CoCoKit 的全局变量或自定义事件，实现窗口内部元素与外部积木逻辑的深度联动。" }, { key: "样式继承", value: "窗口内容区默认开启 overflow-y: auto 与 word-break: break-all，确保长文本或大图片不会撑破窗口。" }] },
+                    { 
+                        id: "adv-v2-delegate", title: "V2.0 元素点击监听指南", 
+                        desc: "在 V2.0 中，你可以通过简单的 HTML 属性配置，让窗口内的任意元素触发外部积木逻辑，实现真正的数据驱动交互。", 
+                        table: [
+                            { key: "触发条件", value: "元素必须包含 <code>data-action</code> 属性。" },
+                            { key: "附加数据", value: "可选添加 <code>data-value</code> 属性，将自定义字符串传递给积木。" },
+                            { key: "底层原理", value: "采用手动向上遍历 DOM 节点的事件委托，兼容所有复杂 HTML 结构与沙箱环境。" }
+                        ],
+                        code: `<!-- HTML 编写示例 -->
+<button data-action="submit" data-value="user_123">提交订单</button>
+<div data-action="open_menu" style="cursor:pointer;">打开菜单</div>
+
+/* 积木逻辑伪代码 */
+当 窗口内元素被点击 (动作标识: [action], 附加数据: [value])
+    如果 <动作标识> = "submit" 那么
+        显示对话框 ("提交了订单，用户ID：" + [附加数据])
+    如果 <动作标识> = "open_menu" 那么
+        设置窗口HTML (新HTML内容: "<h2>菜单已打开</h2>")`
+                    }
                 ]
             },
             {
@@ -132,18 +162,12 @@
                     {
                         id: "dl-v1", title: "V1.0.0 基础版", tag: "download",
                         desc: "首个稳定版本。支持多窗口并行管理、基础属性配置、流畅的拖拽移动以及核心的关闭拦截逻辑。满足绝大多数自定义弹窗与 UI 面板的基础需求。",
-                        download: {
-                            url: "https://db0l8fnn8oqtof.database.nocode.cn/storage/v1/object/public/wenjian/f0ad3a2b-0f35-4818-b485-789c75185522/1781933292189_0cu4vce21g3.zip?download=true",
-                            text: "下载 V1.0.0 (.zip)"
-                        }
+                        download: { url: "https://db0l8fnn8oqtof.database.nocode.cn/storage/v1/object/public/wenjian/f0ad3a2b-0f35-4818-b485-789c75185522/1781888038031_81ffmhmcyzn.zip?download=true", text: "下载 V1.0.0 (.zip)" }
                     },
                     {
                         id: "dl-v2", title: "V2.0.0 增强版", tag: "download",
-                        desc: "在 V1 的基础上，新增了元素点击监听功能。允许开发者在注入的 HTML 中直接绑定交互事件，实现窗口内部元素与外部积木逻辑的深度联动，大幅拓展了控件的交互能力。",
-                        download: {
-                            url: "https://db0l8fnn8oqtof.database.nocode.cn/storage/v1/object/public/wenjian/f0ad3a2b-0f35-4818-b485-789c75185522/1781932302633_9fxy66jjmq.zip?download=true",
-                            text: "下载 V2.0.0 (.zip)"
-                        }
+                        desc: "在 V1 的基础上，新增了元素点击监听功能（事件委托）。允许开发者通过 data-action 属性直接绑定交互事件，实现窗口内部元素与外部积木逻辑的深度联动，大幅拓展了控件的交互能力。",
+                        download: { url: "https://db0l8fnn8oqtof.database.nocode.cn/storage/v1/object/public/wenjian/f0ad3a2b-0f35-4818-b485-789c75185522/1781932302633_9fxy66jjmq.zip?download=true", text: "下载 V2.0.0 (.zip)" }
                     }
                 ]
             }
@@ -172,13 +196,14 @@
                         <p style="color:var(--text-sub); margin-bottom:20px;">${i.desc}</p>
                         ${i.table ? `<div class="section-label">详细说明</div><table class="param-table"><tbody>${i.table.map(r => `<tr><td style="width:30%; font-weight:600;">${r.key}</td><td>${r.value}</td></tr>`).join('')}</tbody></table>` : ''}
                         ${i.reqParams ? `<div class="section-label">${i.tag === 'event' ? '事件参数' : '参数说明'}</div><table class="param-table"><thead><tr><th>参数名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead><tbody>${i.reqParams.map(p => `<tr><td><code>${p.name}</code></td><td>${p.type}</td><td>${p.req}</td><td>${p.desc}</td></tr>`).join('')}</tbody></table>` : ''}
+                        ${i.code ? `<div class="section-label">代码/逻辑示例</div><pre><code>${i.code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>` : ''}
                         ${i.download ? `
                             <a href="${i.download.url}" class="download-btn">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                 ${i.download.text}
                             </a>
                         ` : ''}
-                        ${i.note ? `<div class="note ${i.note.includes('核心') ? 'safe' : ''}">${i.note}</div>` : ''}
+                        ${i.note ? `<div class="note ${i.note.includes('核心') || i.note.includes('💡') ? 'safe' : ''}">${i.note}</div>` : ''}
                     </div>
                 </div>
             `).join('')).join('');
